@@ -127,7 +127,9 @@ public:
     : window_blit::AppBase(window)
     , m_triangles(std::move(triangles))
     , m_bvh(std::move(bvh))
-  {}
+  {
+    glfwSetWindowSize(window, 256, 256);
+  }
 
   void render(float* rgb, int width, int height) override
   {

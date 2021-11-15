@@ -2,12 +2,29 @@
 
 #include "common.hpp"
 
-#include <random>
-
 #include <cmath>
 #include <cstdint>
 
 namespace {
+
+class Pcg final
+{
+public:
+  constexpr Pcg(std::uint32_t initial_state)
+    : m_state(initial_state)
+  {}
+
+  constexpr std::uint32_t operator()() noexcept
+  {
+    const std::uint32_t state = m_state;
+    m_state = m_state * 747796405u + 2891336453u;
+    const std::uint32_t word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
+  }
+
+private:
+  std::uint32_t m_state;
+};
 
 template<typename Rng>
 std::uint32_t
@@ -148,9 +165,7 @@ render(const Vec3& eye,
 
     for (int x = 0; x < width; x++) {
 
-      std::seed_seq seed{ 1234, width, height, x, y };
-
-      std::minstd_rand rng(seed);
+      Pcg rng((y * width) + x);
 
       Vec3 hdr_color(0, 0, 0);
 
