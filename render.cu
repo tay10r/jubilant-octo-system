@@ -1,13 +1,34 @@
 #include "render.hpp"
 
+#include "array.cuh"
+#include "bvh.cuh"
+
 #include "common.hpp"
 #include "random.hpp"
 
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 
 namespace {
 
+void
+check_cuda(cudaError_t result, const char* func, const char* file, int line)
+{
+  if (result != cudaSuccess) {
+    std::fprintf(stderr, "%s:%s:%d: %s\n", file, func, line, cudaGetErrorString(result));
+    cudaDeviceReset();
+    std::exit(EXIT_FAILURE);
+  }
+}
+
+} // namespace
+
+#define checkCudaError(val) check_cuda((val), #val, __FILE__, __LINE__)
+
+namespace {
+
+#if 0
 Vec3
 on_miss(const Ray& ray)
 {
@@ -87,52 +108,99 @@ trace(const Triangle* triangles, const Bvh& bvh, Ray& ray, Rng& rng)
 
   return Vec3(0, 0, 0);
 }
+#endif
 
-void
+__global__ void
 renderPixel(const Vec3& eye,
             const Vec3& dir,
             const Vec3& right,
             const Vec3& up,
-            const Bvh& bvh,
-            const Triangle* triangles,
-            float rcp_width,
-            float rcp_height,
-            float* rgb)
+            const DeviceBvh& bvh,
+            const DeviceArray<Triangle>& triangles,
+            int width,
+            int height,
+            Vec3* rgb)
 {
-    const int x = threadIdx.x + (blockIdx.x * blockDim.x);
-    const int y = threadIdx.y + (blockIdx.y * blockDim.y);
+  const float rcp_width = 1.0f / width;
+  const float rcp_height = 1.0f / height;
 
-    const float u = (x + 0.0) * rcp_width;
-    const float v = (y + 0.0) * rcp_height;
+  const int x = threadIdx.x + (blockIdx.x * blockDim.x);
+  const int y = threadIdx.y + (blockIdx.y * blockDim.y);
 
-    const int pixelIndex = ((y * blockDim.x) + x) * 3;
+  const float u = (x + 0.0) * rcp_width;
+  const float v = (y + 0.0) * rcp_height;
 
-    rgb[pixelIndex + 0] = u;
-    rgb[pixelIndex + 1] = v;
-    rgb[pixelIndex + 2] = 1;
+  const int pixelIndex = (y * width) + x;
+
+  rgb[pixelIndex] = Vec3(u, v, 1.0f);
 }
+
+class RendererImpl final : public Renderer
+{
+public:
+  RendererImpl(const Triangle*, const HostBvh& bvh)
+    : m_triangles(bvh.prim_indices.size())
+    , m_bvh(make_device_bvh(bvh))
+  {}
+
+  void render(const Vec3& eye, const Vec3& dir, const Vec3& right, const Vec3& up, int width, int height, float* rgb)
+    override
+  {
+    const int tx = 8;
+    const int ty = 8;
+
+    const int padded_w = ((width + (tx - 1)) / tx) * tx;
+    const int padded_h = ((height + (ty - 1)) / ty) * ty;
+
+    DeviceArray<Vec3> device_rgb(padded_w * padded_h);
+
+    cudaDeviceSynchronize();
+
+    checkCudaError(cudaGetLastError());
+
+    dim3 blocks(padded_w / tx, padded_h / ty);
+
+    dim3 threads(tx, ty);
+
+    renderPixel<<<blocks, threads>>>(eye, dir, right, up, m_bvh, m_triangles, width, height, &device_rgb[0]);
+
+    cudaDeviceSynchronize();
+
+    checkCudaError(cudaGetLastError());
+
+    HostArray<Vec3> host_rgb(padded_w * padded_h);
+
+    deviceToHost(device_rgb, host_rgb);
+
+    checkCudaError(cudaGetLastError());
+
+    cudaDeviceSynchronize();
+
+    for (int y = 0; y < height; y++) {
+
+      for (int x = 0; x < width; x++) {
+
+        const int src = (y * padded_w) + x;
+
+        const int dst = (y * width) + x;
+
+        rgb[(dst * 3) + 0] = host_rgb[src][0];
+        rgb[(dst * 3) + 1] = host_rgb[src][1];
+        rgb[(dst * 3) + 2] = host_rgb[src][2];
+      }
+    }
+  }
+
+private:
+  DeviceArray<Triangle> m_triangles;
+
+  DeviceBvh m_bvh;
+};
 
 } // namespace
 
-void
-render(const Vec3& eye,
-       const Vec3& dir,
-       const Vec3& right,
-       const Vec3& up,
-       const Bvh& bvh,
-       const Triangle* triangles,
-       int width,
-       int height,
-       float* rgb)
+std::unique_ptr<Renderer>
+Renderer::create(const Triangle* triangles, const HostBvh& bvh)
 {
-  const int tx = 8;
-  const int ty = 8;
-
-  dim3 blocks(width / tx, height / ty);
-
-  dim3 threads(tx, ty);
-
-  renderPixel << blocks, threads >> (eye, dir, right, up, bvh, triangles, width, height, rgb);
-
-  cudaDeviceSynchronize();
+  return std::unique_ptr<Renderer>(new RendererImpl(triangles, bvh));
 }

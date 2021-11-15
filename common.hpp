@@ -147,48 +147,26 @@ struct Node
   }
 };
 
-struct CAllocator final
+template<bool IsDeviceBvh>
+struct Bvh final
 {
-  void* alloc(size_t size) { return std::malloc(size); }
+  Array<Node, IsDeviceBvh> nodes;
 
-  void release(void* addr) { std::free(addr); }
-};
-
-struct Bvh
-{
-  Array<Node> nodes;
-
-  Array<size_t> prim_indices;
+  Array<size_t, IsDeviceBvh> prim_indices;
 
   Bvh(size_t prim_count)
     : nodes((2 * prim_count) - 1)
     , prim_indices(prim_count)
   {}
 
-  static Bvh build(const BBox* bboxes, const Vec3* centers, size_t prim_count);
-
   template<typename Prim>
   Hit<Prim> traverse(Ray& ray, const Prim* prims) const;
 };
 
-struct Morton
-{
-  using Value = uint32_t;
-  static constexpr int log_bits = 5;
-  static constexpr size_t grid_dim = 1024;
+using HostBvh = Bvh<false>;
 
-  static Value split(Value x)
-  {
-    uint64_t mask = (UINT64_C(1) << (1 << log_bits)) - 1;
-    for (int i = log_bits, n = 1 << log_bits; i > 0; --i, n >>= 1) {
-      mask = (mask | (mask << n)) & ~(mask << (n / 2));
-      x = (x | (x << n)) & mask;
-    }
-    return x;
-  }
-
-  static Value encode(Value x, Value y, Value z) { return split(x) | (split(y) << 1) | (split(z) << 2); }
-};
+HostBvh
+build_bvh(const BBox* bboxes, const Vec3* centers, size_t prim_count);
 
 struct TriangleIntersection final
 {
@@ -246,9 +224,10 @@ Triangle::intersect(Ray& ray) const
   return Intersection{};
 }
 
+template<bool IsDeviceBvh>
 template<typename Prim>
 Hit<Prim>
-Bvh::traverse(Ray& ray, const Prim* prims) const
+Bvh<IsDeviceBvh>::traverse(Ray& ray, const Prim* prims) const
 {
   auto hit = Hit<Prim>::none();
   SmallStack<uint32_t, 32> stack;

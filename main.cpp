@@ -123,13 +123,13 @@ namespace {
 class App final : public window_blit::AppBase
 {
 public:
-  App(std::vector<Triangle>&& triangles, Bvh&& bvh, GLFWwindow* window)
+  App(std::vector<Triangle>&& triangles, HostBvh&& bvh, GLFWwindow* window)
     : window_blit::AppBase(window)
     , m_triangles(std::move(triangles))
     , m_bvh(std::move(bvh))
     , m_renderer(Renderer::create(m_triangles.data(), m_bvh))
   {
-    glfwSetWindowSize(window, 256, 256);
+    glfwSetWindowSize(window, 960, 540);
   }
 
   void render(float* rgb, int width, int height) override
@@ -153,7 +153,7 @@ public:
 private:
   std::vector<Triangle> m_triangles;
 
-  Bvh m_bvh;
+  HostBvh m_bvh;
 
   std::unique_ptr<Renderer> m_renderer;
 };
@@ -161,7 +161,7 @@ private:
 class AppFactory final : public window_blit::AppFactoryBase
 {
 public:
-  AppFactory(std::vector<Triangle>&& triangles, Bvh&& bvh)
+  AppFactory(std::vector<Triangle>&& triangles, HostBvh&& bvh)
     : m_triangles(std::move(triangles))
     , m_bvh(std::move(bvh))
   {}
@@ -171,7 +171,7 @@ public:
 private:
   std::vector<Triangle> m_triangles;
 
-  Bvh m_bvh;
+  HostBvh m_bvh;
 };
 
 } // namespace
@@ -179,11 +179,11 @@ private:
 int
 main(int argc, char** argv)
 {
-
   if (argc < 2) {
     std::cerr << "Missing input file" << std::endl;
     return 1;
   }
+
   auto tris = obj::load_from_file(argv[1]);
   if (tris.empty()) {
     std::cerr << "No triangle was found in input OBJ file" << std::endl;
@@ -197,7 +197,7 @@ main(int argc, char** argv)
     bboxes[i] = BBox(tris[i].p0).extend(tris[i].p1).extend(tris[i].p2);
     centers[i] = (tris[i].p0 + tris[i].p1 + tris[i].p2) * (1.0f / 3.0f);
   }
-  auto bvh = Bvh::build(bboxes.data(), centers.data(), tris.size());
+  auto bvh = build_bvh(bboxes.data(), centers.data(), tris.size());
 
   AppFactory appFactory(std::move(tris), std::move(bvh));
 

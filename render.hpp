@@ -2,14 +2,16 @@
 
 #include <memory>
 
+template<bool>
 struct Bvh;
+
 struct Triangle;
 struct Vec3;
 
 class Renderer
 {
 public:
-  static std::unique_ptr<Renderer> create(const Triangle* triangles, const Bvh& bvh);
+  static std::unique_ptr<Renderer> create(const Triangle* triangles, const Bvh<false>& bvh);
 
   virtual ~Renderer() = default;
 

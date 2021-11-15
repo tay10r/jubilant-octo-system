@@ -1,5 +1,26 @@
 #include "common.hpp"
 
+namespace {
+
+struct Morton
+{
+  using Value = uint32_t;
+  static constexpr int log_bits = 5;
+  static constexpr size_t grid_dim = 1024;
+
+  static Value split(Value x)
+  {
+    uint64_t mask = (UINT64_C(1) << (1 << log_bits)) - 1;
+    for (int i = log_bits, n = 1 << log_bits; i > 0; --i, n >>= 1) {
+      mask = (mask | (mask << n)) & ~(mask << (n / 2));
+      x = (x | (x << n)) & mask;
+    }
+    return x;
+  }
+
+  static Value encode(Value x, Value y, Value z) { return split(x) | (split(y) << 1) | (split(z) << 2); }
+};
+
 inline size_t
 find_closest_node(const std::vector<Node>& nodes, size_t index)
 {
@@ -22,10 +43,12 @@ find_closest_node(const std::vector<Node>& nodes, size_t index)
   return best_index;
 }
 
-Bvh
-Bvh::build(const BBox* bboxes, const Vec3* centers, size_t prim_count)
+} // namespace
+
+HostBvh
+build_bvh(const BBox* bboxes, const Vec3* centers, size_t prim_count)
 {
-  Bvh bvh(prim_count);
+  HostBvh bvh(prim_count);
 
   // Compute the bounding box of all the centers
   auto center_bbox = std::transform_reduce(

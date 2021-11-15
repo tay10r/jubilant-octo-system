@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.9.6)
 
-project(tmp LANGUAGES CXX )
+project(tmp LANGUAGES CXX CUDA)
 
 find_package(OpenMP REQUIRED)
 
@@ -17,7 +17,10 @@ set(sources
 if(CMAKE_CUDA_COMPILER)
   list(APPEND sources
     render.hpp
-    render.cu)
+    render.cu
+    bvh.cu
+    bvh.cuh
+    array.cuh)
 else(CMAKE_CUDA_COMPILER)
   list(APPEND sources
     render.hpp
@@ -25,10 +28,6 @@ else(CMAKE_CUDA_COMPILER)
 endif(CMAKE_CUDA_COMPILER)
 
 add_executable(main ${sources})
-
-if(NOT MSVC)
-  target_compile_options(main PRIVATE -Wall -Wextra -Werror -Wfatal-errors)
-endif(NOT MSVC)
 
 target_compile_features(main PRIVATE cxx_std_17)
 

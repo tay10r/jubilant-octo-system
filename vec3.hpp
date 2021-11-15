@@ -1,5 +1,7 @@
 #pragma once
 
+#include "cuda_macros.hpp"
+
 #include <algorithm>
 
 #include <cmath>
@@ -8,25 +10,28 @@ struct Vec3
 {
   float values[3];
 
-  Vec3() = default;
-  Vec3(float x, float y, float z)
+  DEVHOST_FUNC Vec3() = default;
+
+  DEVHOST_FUNC Vec3(float x, float y, float z)
     : values{ x, y, z }
   {}
-  explicit Vec3(float x)
+
+  DEVHOST_FUNC explicit Vec3(float x)
     : Vec3(x, x, x)
   {}
 
-  float& operator[](int i) { return values[i]; }
-  float operator[](int i) const { return values[i]; }
+  DEVHOST_FUNC float& operator[](int i) { return values[i]; }
+
+  DEVHOST_FUNC float operator[](int i) const { return values[i]; }
 };
 
-inline Vec3
+DEVHOST_FUNC inline Vec3
 operator+(const Vec3& a, const Vec3& b)
 {
   return Vec3(a[0] + b[0], a[1] + b[1], a[2] + b[2]);
 }
 
-inline Vec3
+DEVHOST_FUNC inline Vec3
 operator-(const Vec3& a, const Vec3& b)
 {
   return Vec3(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
