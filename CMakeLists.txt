@@ -26,6 +26,10 @@ endif(CMAKE_CUDA_COMPILER)
 
 add_executable(main ${sources})
 
+if(NOT MSVC)
+  target_compile_options(main PRIVATE -Wall -Wextra -Werror -Wfatal-errors)
+endif(NOT MSVC)
+
 target_compile_features(main PRIVATE cxx_std_17)
 
 target_link_libraries(main PRIVATE window_blit OpenMP::OpenMP_CXX)

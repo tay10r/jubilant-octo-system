@@ -25,7 +25,7 @@ find_closest_node(const std::vector<Node>& nodes, size_t index)
 Bvh
 Bvh::build(const BBox* bboxes, const Vec3* centers, size_t prim_count)
 {
-  Bvh bvh;
+  Bvh bvh(prim_count);
 
   // Compute the bounding box of all the centers
   auto center_bbox = std::transform_reduce(
@@ -45,8 +45,8 @@ Bvh::build(const BBox* bboxes, const Vec3* centers, size_t prim_count)
   }
 
   // Sort primitives according to their morton code
-  bvh.prim_indices.resize(prim_count);
   std::iota(bvh.prim_indices.begin(), bvh.prim_indices.end(), 0);
+
   std::sort(
     bvh.prim_indices.begin(), bvh.prim_indices.end(), [&](size_t i, size_t j) { return mortons[i] < mortons[j]; });
 
@@ -60,7 +60,6 @@ Bvh::build(const BBox* bboxes, const Vec3* centers, size_t prim_count)
   }
 
   // Merge nodes until there is only one left
-  bvh.nodes.resize(2 * prim_count - 1);
   size_t insertion_index = bvh.nodes.size();
 
   while (current_nodes.size() > 1) {

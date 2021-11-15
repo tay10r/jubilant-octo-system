@@ -198,7 +198,6 @@ main(int argc, char** argv)
     centers[i] = (tris[i].p0 + tris[i].p1 + tris[i].p2) * (1.0f / 3.0f);
   }
   auto bvh = Bvh::build(bboxes.data(), centers.data(), tris.size());
-  std::cout << "Built BVH with " << bvh.nodes.size() << " node(s), depth " << bvh.depth() << std::endl;
 
   AppFactory appFactory(std::move(tris), std::move(bvh));
 
