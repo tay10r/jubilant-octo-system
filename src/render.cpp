@@ -1,10 +1,12 @@
-#include "render.hpp"
+#include <Qx/render.hpp>
 
-#include "common.hpp"
-#include "random.hpp"
+#include <Qx/common.hpp>
+#include <Qx/random.hpp>
 
 #include <cmath>
 #include <cstdint>
+
+namespace Qx {
 
 namespace {
 
@@ -49,7 +51,7 @@ sample_hemisphere(const Vec3& normal, const Vec3& tangent, Rng& rng)
 
 template<typename Rng>
 Vec3
-trace(const Triangle* triangles, const Bvh& bvh, Ray& ray, Rng& rng)
+trace(const Triangle* triangles, const HostBvh& bvh, Ray& ray, Rng& rng)
 {
   int depth = 0;
 
@@ -91,7 +93,7 @@ trace(const Triangle* triangles, const Bvh& bvh, Ray& ray, Rng& rng)
 class RendererImpl final : public Renderer
 {
 public:
-  RendererImpl(const Triangle* triangles, const Bvh& bvh)
+  RendererImpl(const Triangle* triangles, const HostBvh& bvh)
     : m_triangles(triangles)
     , m_bvh(bvh)
   {}
@@ -136,13 +138,15 @@ public:
 private:
   const Triangle* m_triangles;
 
-  const Bvh& m_bvh;
+  const HostBvh& m_bvh;
 };
 
 } // namespace
 
 std::unique_ptr<Renderer>
-Renderer::create(const Triangle* triangles, const Bvh& bvh)
+Renderer::create(const Triangle* triangles, const HostBvh& bvh)
 {
   return std::unique_ptr<Renderer>(new RendererImpl(triangles, bvh));
 }
+
+} // namespace Qx

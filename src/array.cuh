@@ -1,7 +1,11 @@
 #pragma once
 
-#include "cuda_macros.hpp"
-#include "array.hpp"
+#include <Qx/cuda_macros.hpp>
+#include <Qx/array.hpp>
+
+#include <cstdio>
+
+namespace Qx {
 
 template<>
 struct Allocator<true> final
@@ -11,6 +15,9 @@ struct Allocator<true> final
     void* result = nullptr;
 
     const cudaError_t error = cudaMalloc(&result, size);
+
+    if (error != cudaSuccess)
+      fprintf(stderr, "%s\n", cudaGetErrorString(error));
 
     assert(error == cudaSuccess);
 
@@ -36,3 +43,5 @@ deviceToHost(const Array<Element, true>& src, Array<Element, false>& dst)
 {
   cudaMemcpy(&dst[0], &src[0], src.size() * sizeof(Element), cudaMemcpyDeviceToHost);
 }
+
+} // namespace Qx

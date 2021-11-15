@@ -2,6 +2,8 @@
 
 #include <memory>
 
+namespace Qx {
+
 template<bool>
 struct Bvh;
 
@@ -18,3 +20,5 @@ public:
   virtual void
   render(const Vec3& eye, const Vec3& dir, const Vec3& right, const Vec3& up, int width, int height, float* rgb) = 0;
 };
+
+} // namespace Qx

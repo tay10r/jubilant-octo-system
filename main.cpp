@@ -1,9 +1,10 @@
 #include <window_blit/window_blit.hpp>
 
-#include "common.hpp"
-#include "render.hpp"
+#include <Qx/common.hpp>
+#include <Qx/render.hpp>
 
 #include <fstream>
+#include <optional>
 
 namespace obj {
 
@@ -60,14 +61,14 @@ read_index(char** ptr)
   return std::make_optional(index);
 }
 
-inline std::vector<Triangle>
+inline std::vector<Qx::Triangle>
 load_from_stream(std::istream& is)
 {
   static constexpr size_t max_line = 1024;
   char line[max_line];
 
-  std::vector<Vec3> vertices;
-  std::vector<Triangle> triangles;
+  std::vector<Qx::Vec3> vertices;
+  std::vector<Qx::Triangle> triangles;
 
   while (is.getline(line, max_line)) {
     char* ptr = strip_spaces(line);
@@ -80,7 +81,7 @@ load_from_stream(std::istream& is)
       auto z = std::strtof(ptr, &ptr);
       vertices.emplace_back(x, y, z);
     } else if (*ptr == 'f' && std::isspace(ptr[1])) {
-      Vec3 points[2];
+      Qx::Vec3 points[2];
       ptr += 2;
       for (size_t i = 0;; ++i) {
         if (auto index = read_index(&ptr)) {
@@ -103,31 +104,27 @@ load_from_stream(std::istream& is)
   return triangles;
 }
 
-inline std::vector<Triangle>
+inline std::vector<Qx::Triangle>
 load_from_file(const std::string& file)
 {
   std::ifstream is(file);
   if (is)
     return load_from_stream(is);
-  return std::vector<Triangle>();
+  return std::vector<Qx::Triangle>();
 }
 
 } // namespace obj
-
-static const size_t width = 1024;
-static const size_t height = 1024;
-static const auto output_file = "out.ppm";
 
 namespace {
 
 class App final : public window_blit::AppBase
 {
 public:
-  App(std::vector<Triangle>&& triangles, HostBvh&& bvh, GLFWwindow* window)
+  App(std::vector<Qx::Triangle>&& triangles, Qx::HostBvh&& bvh, GLFWwindow* window)
     : window_blit::AppBase(window)
     , m_triangles(std::move(triangles))
     , m_bvh(std::move(bvh))
-    , m_renderer(Renderer::create(m_triangles.data(), m_bvh))
+    , m_renderer(Qx::Renderer::create(m_triangles.data(), m_bvh))
   {
     glfwSetWindowSize(window, 960, 540);
   }
@@ -142,26 +139,26 @@ public:
 
     const glm::vec3 right = glm::normalize(glm::cross(dir, up));
 
-    const Vec3 tmp_eye(eye.x, eye.y, eye.z);
-    const Vec3 tmp_dir(dir.x, dir.y, dir.z);
-    const Vec3 tmp_up(up.x, up.y, up.z);
-    const Vec3 tmp_right(right.x, right.y, right.z);
+    const Qx::Vec3 tmp_eye(eye.x, eye.y, eye.z);
+    const Qx::Vec3 tmp_dir(dir.x, dir.y, dir.z);
+    const Qx::Vec3 tmp_up(up.x, up.y, up.z);
+    const Qx::Vec3 tmp_right(right.x, right.y, right.z);
 
     m_renderer->render(tmp_eye, tmp_dir, tmp_right, tmp_up, width, height, rgb);
   }
 
 private:
-  std::vector<Triangle> m_triangles;
+  std::vector<Qx::Triangle> m_triangles;
 
-  HostBvh m_bvh;
+  Qx::HostBvh m_bvh;
 
-  std::unique_ptr<Renderer> m_renderer;
+  std::unique_ptr<Qx::Renderer> m_renderer;
 };
 
 class AppFactory final : public window_blit::AppFactoryBase
 {
 public:
-  AppFactory(std::vector<Triangle>&& triangles, HostBvh&& bvh)
+  AppFactory(std::vector<Qx::Triangle>&& triangles, Qx::HostBvh&& bvh)
     : m_triangles(std::move(triangles))
     , m_bvh(std::move(bvh))
   {}
@@ -169,9 +166,9 @@ public:
   window_blit::App* create_app(GLFWwindow* window) { return new App(std::move(m_triangles), std::move(m_bvh), window); }
 
 private:
-  std::vector<Triangle> m_triangles;
+  std::vector<Qx::Triangle> m_triangles;
 
-  HostBvh m_bvh;
+  Qx::HostBvh m_bvh;
 };
 
 } // namespace
@@ -191,13 +188,13 @@ main(int argc, char** argv)
   }
   std::cout << "Loaded file with " << tris.size() << " triangle(s)" << std::endl;
 
-  std::vector<BBox> bboxes(tris.size());
-  std::vector<Vec3> centers(tris.size());
+  std::vector<Qx::BBox> bboxes(tris.size());
+  std::vector<Qx::Vec3> centers(tris.size());
   for (size_t i = 0; i < tris.size(); ++i) {
-    bboxes[i] = BBox(tris[i].p0).extend(tris[i].p1).extend(tris[i].p2);
+    bboxes[i] = Qx::BBox(tris[i].p0).extend(tris[i].p1).extend(tris[i].p2);
     centers[i] = (tris[i].p0 + tris[i].p1 + tris[i].p2) * (1.0f / 3.0f);
   }
-  auto bvh = build_bvh(bboxes.data(), centers.data(), tris.size());
+  auto bvh = Qx::build_bvh(bboxes.data(), centers.data(), tris.size());
 
   AppFactory appFactory(std::move(tris), std::move(bvh));
 

@@ -1,10 +1,12 @@
 #pragma once
 
-#include "cuda_macros.hpp"
+#include <Qx/cuda_macros.hpp>
 
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
+
+namespace Qx {
 
 template<bool UseDeviceMemory>
 struct Allocator final
@@ -22,7 +24,7 @@ template<typename Element, bool IsDeviceArray>
 class Array final
 {
 public:
-  using ArrayAllocator = ::Allocator<IsDeviceArray>;
+  using ArrayAllocator = Qx::Allocator<IsDeviceArray>;
 
   Array(const Array&) = delete;
 
@@ -46,15 +48,15 @@ public:
     m_size = 0;
   }
 
-  DEVHOST_FUNC const Element& operator[](size_t index) const noexcept { return m_data[index]; }
+  __device__ __host__ const Element& operator[](size_t index) const noexcept { return m_data[index]; }
 
-  DEVHOST_FUNC Element& operator[](size_t index) noexcept { return m_data[index]; }
+  __device__ __host__ Element& operator[](size_t index) noexcept { return m_data[index]; }
 
-  DEVHOST_FUNC size_t size() const noexcept { return m_size; }
+  __device__ __host__ size_t size() const noexcept { return m_size; }
 
-  DEVHOST_FUNC Element* begin() noexcept { return m_data; }
+  __device__ __host__ Element* begin() noexcept { return m_data; }
 
-  DEVHOST_FUNC Element* end() noexcept { return m_data + m_size; }
+  __device__ __host__ Element* end() noexcept { return m_data + m_size; }
 
   const Element* begin() const noexcept { return m_data; }
 
@@ -68,3 +70,5 @@ private:
 
 template<typename Element>
 using HostArray = Array<Element, false>;
+
+} // namespace Qx

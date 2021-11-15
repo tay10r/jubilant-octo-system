@@ -1,14 +1,16 @@
-#include "render.hpp"
+#include <Qx/render.hpp>
 
 #include "array.cuh"
 #include "bvh.cuh"
 
-#include "common.hpp"
-#include "random.hpp"
+#include <Qx/common.hpp>
+#include <Qx/random.hpp>
 
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+
+namespace Qx {
 
 namespace {
 
@@ -154,8 +156,6 @@ public:
 
     DeviceArray<Vec3> device_rgb(padded_w * padded_h);
 
-    cudaDeviceSynchronize();
-
     checkCudaError(cudaGetLastError());
 
     dim3 blocks(padded_w / tx, padded_h / ty);
@@ -173,8 +173,6 @@ public:
     deviceToHost(device_rgb, host_rgb);
 
     checkCudaError(cudaGetLastError());
-
-    cudaDeviceSynchronize();
 
     for (int y = 0; y < height; y++) {
 
@@ -204,3 +202,5 @@ Renderer::create(const Triangle* triangles, const HostBvh& bvh)
 {
   return std::unique_ptr<Renderer>(new RendererImpl(triangles, bvh));
 }
+
+} // namespace Qx

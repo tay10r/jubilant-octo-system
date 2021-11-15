@@ -1,15 +1,19 @@
 #pragma once
 
+#include <Qx/cuda_macros.hpp>
+
 #include <cstdint>
+
+namespace Qx {
 
 class Pcg final
 {
 public:
-  constexpr Pcg(std::uint32_t initial_state)
+  __device__ constexpr Pcg(std::uint32_t initial_state)
     : m_state(initial_state)
   {}
 
-  constexpr std::uint32_t operator()() noexcept
+  __device__ constexpr std::uint32_t operator()() noexcept
   {
     const std::uint32_t state = m_state;
     m_state = m_state * 747796405u + 2891336453u;
@@ -22,13 +26,13 @@ private:
 };
 
 template<typename Rng>
-std::uint32_t
+std::uint32_t __device__
 random_int(Rng& rng)
 {
   return rng();
 }
 
-float
+inline float __device__
 floatbits(std::uint32_t in)
 {
   union
@@ -45,7 +49,7 @@ floatbits(std::uint32_t in)
 }
 
 template<typename Rng>
-float
+float __device__
 random_float(Rng& rng)
 {
   std::uint32_t value = random_int(rng);
@@ -54,10 +58,12 @@ random_float(Rng& rng)
 }
 
 template<typename Rng>
-float
+float __device__
 random_float_2(Rng& rng)
 {
   std::uint32_t value = random_int(rng);
 
   return floatbits((value & 0x007f'ffff) | 0x4000'0000) - 3.0f;
 }
+
+} // namespace Qx

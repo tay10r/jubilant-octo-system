@@ -1,5 +1,7 @@
 #pragma once
 
+namespace Qx {
+
 template<typename Element, int Max>
 class SmallStack final
 {
@@ -32,3 +34,5 @@ private:
 
   int m_size = 0;
 };
+
+} // namespace Qx

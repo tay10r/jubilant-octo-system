@@ -1,8 +1,9 @@
 #pragma once
 
-#include "array.hpp"
-#include "small_stack.hpp"
-#include "vec3.hpp"
+#include <Qx/array.hpp>
+#include <Qx/scalar.hpp>
+#include <Qx/small_stack.hpp>
+#include <Qx/vec3.hpp>
 
 #include <algorithm>
 #include <array>
@@ -18,6 +19,8 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+
+namespace Qx {
 
 struct BBox
 {
@@ -36,8 +39,8 @@ struct BBox
 
   BBox& extend(const BBox& other)
   {
-    min = ::min(min, other.min);
-    max = ::max(max, other.max);
+    min = Qx::min(min, other.min);
+    max = Qx::max(max, other.max);
     return *this;
   }
 
@@ -253,3 +256,5 @@ Bvh<IsDeviceBvh>::traverse(Ray& ray, const Prim* prims) const
   }
   return hit;
 }
+
+} // namespace Qx

@@ -1,4 +1,6 @@
-#include "common.hpp"
+#include <Qx/common.hpp>
+
+namespace Qx {
 
 namespace {
 
@@ -125,3 +127,5 @@ build_bvh(const BBox* bboxes, const Vec3* centers, size_t prim_count)
   bvh.nodes[0] = current_nodes[0];
   return bvh;
 }
+
+} // namespace Qx

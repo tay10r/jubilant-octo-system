@@ -2,6 +2,8 @@
 
 #include "array.cuh"
 
+namespace Qx {
+
 DeviceBvh
 make_device_bvh(const HostBvh& bvh)
 {
@@ -13,3 +15,5 @@ make_device_bvh(const HostBvh& bvh)
 
   return device_bvh;
 }
+
+} // namespace Qx
