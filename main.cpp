@@ -127,6 +127,7 @@ public:
     : window_blit::AppBase(window)
     , m_triangles(std::move(triangles))
     , m_bvh(std::move(bvh))
+    , m_renderer(Renderer::create(m_triangles.data(), m_bvh))
   {
     glfwSetWindowSize(window, 256, 256);
   }
@@ -146,13 +147,15 @@ public:
     const Vec3 tmp_up(up.x, up.y, up.z);
     const Vec3 tmp_right(right.x, right.y, right.z);
 
-    ::render(tmp_eye, tmp_dir, tmp_right, tmp_up, m_bvh, m_triangles.data(), width, height, rgb);
+    m_renderer->render(tmp_eye, tmp_dir, tmp_right, tmp_up, width, height, rgb);
   }
 
 private:
   std::vector<Triangle> m_triangles;
 
   Bvh m_bvh;
+
+  std::unique_ptr<Renderer> m_renderer;
 };
 
 class AppFactory final : public window_blit::AppFactoryBase

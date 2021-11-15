@@ -1,5 +1,11 @@
 #pragma once
 
+#ifdef __CUDACC__
+#define DEV_FUNC __device
+#else
+#define DEV_FUNC
+#endif
+
 #include "small_stack.hpp"
 
 #include <algorithm>

@@ -88,61 +88,51 @@ trace(const Triangle* triangles, const Bvh& bvh, Ray& ray, Rng& rng)
   return Vec3(0, 0, 0);
 }
 
-class RendererImpl final : public Renderer
+void
+renderPixel(const Vec3& eye,
+            const Vec3& dir,
+            const Vec3& right,
+            const Vec3& up,
+            const Bvh& bvh,
+            const Triangle* triangles,
+            float rcp_width,
+            float rcp_height,
+            float* rgb)
 {
-public:
-  RendererImpl(const Triangle* triangles, const Bvh& bvh)
-    : m_triangles(triangles)
-    , m_bvh(bvh)
-  {}
+    const int x = threadIdx.x + (blockIdx.x * blockDim.x);
+    const int y = threadIdx.y + (blockIdx.y * blockDim.y);
 
-  void render(const Vec3& eye, const Vec3& dir, const Vec3& right, const Vec3& up, int width, int height, float* rgb)
-    override
-  {
-#pragma omp parallel for
-    for (int y = 0; y < height; y++) {
+    const float u = (x + 0.0) * rcp_width;
+    const float v = (y + 0.0) * rcp_height;
 
-      for (int x = 0; x < width; x++) {
+    const int pixelIndex = ((y * blockDim.x) + x) * 3;
 
-        Pcg rng((y * width) + x);
-
-        Vec3 hdr_color(0, 0, 0);
-
-        const int spp = 1;
-
-        for (int i = 0; i < spp; i++) {
-
-          const float u = (float(x) + random_float(rng)) / float(width);
-          const float v = (float(y) + random_float(rng)) / float(height);
-
-          const float d_x = (u * 2.0f) - 1.0f;
-          const float d_y = 1.0f - (v * 2.0f);
-
-          Ray ray(eye, normalize(dir + (d_x * right) + (d_y * up)));
-
-          hdr_color = hdr_color + trace(m_triangles, m_bvh, ray, rng);
-        }
-
-        const Vec3 ldr_color = hdr_color / (hdr_color + Vec3(1, 1, 1));
-
-        auto pixel = 3 * (y * width + x);
-        rgb[pixel + 0] = ldr_color[0];
-        rgb[pixel + 1] = ldr_color[1];
-        rgb[pixel + 2] = ldr_color[2];
-      }
-    }
-  }
-
-private:
-  const Triangle* m_triangles;
-
-  const Bvh& m_bvh;
-};
+    rgb[pixelIndex + 0] = u;
+    rgb[pixelIndex + 1] = v;
+    rgb[pixelIndex + 2] = 1;
+}
 
 } // namespace
 
-std::unique_ptr<Renderer>
-Renderer::create(const Triangle* triangles, const Bvh& bvh)
+void
+render(const Vec3& eye,
+       const Vec3& dir,
+       const Vec3& right,
+       const Vec3& up,
+       const Bvh& bvh,
+       const Triangle* triangles,
+       int width,
+       int height,
+       float* rgb)
 {
-  return std::unique_ptr<Renderer>(new RendererImpl(triangles, bvh));
+  const int tx = 8;
+  const int ty = 8;
+
+  dim3 blocks(width / tx, height / ty);
+
+  dim3 threads(tx, ty);
+
+  renderPixel << blocks, threads >> (eye, dir, right, up, bvh, triangles, width, height, rgb);
+
+  cudaDeviceSynchronize();
 }
