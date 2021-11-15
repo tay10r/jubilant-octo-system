@@ -133,15 +133,20 @@ public:
 
   void render(float* rgb, int width, int height) override
   {
-    Vec3 eye(0, 1, 3);
-    Vec3 dir(0, 0, -1);
-    Vec3 up(0, 1, 0);
+    const glm::vec3 eye = get_camera_position();
 
-    dir = normalize(dir);
-    auto right = normalize(cross(dir, up));
-    up = cross(right, dir);
+    const glm::vec3 dir = get_camera_rotation_transform() * glm::vec3(0, 0, -1);
 
-    ::render(eye, dir, right, up, m_bvh, m_triangles.data(), width, height, rgb);
+    const glm::vec3 up = get_camera_rotation_transform() * glm::vec3(0, 1, 0);
+
+    const glm::vec3 right = glm::normalize(glm::cross(dir, up));
+
+    const Vec3 tmp_eye(eye.x, eye.y, eye.z);
+    const Vec3 tmp_dir(dir.x, dir.y, dir.z);
+    const Vec3 tmp_up(up.x, up.y, up.z);
+    const Vec3 tmp_right(right.x, right.y, right.z);
+
+    ::render(tmp_eye, tmp_dir, tmp_right, tmp_up, m_bvh, m_triangles.data(), width, height, rgb);
   }
 
 private:

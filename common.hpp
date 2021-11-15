@@ -1,12 +1,12 @@
 #pragma once
 
+#include "small_stack.hpp"
+
 #include <algorithm>
 #include <array>
 #include <iostream>
 #include <limits>
 #include <numeric>
-#include <optional>
-#include <stack>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -339,11 +339,10 @@ Hit<Prim>
 Bvh::traverse(Ray& ray, const Prim* prims) const
 {
   auto hit = Hit<Prim>::none();
-  std::stack<uint32_t> stack;
-  stack.push(0);
+  SmallStack<uint32_t, 32> stack;
+  stack.push_back(0);
   while (!stack.empty()) {
-    auto& node = nodes[stack.top()];
-    stack.pop();
+    auto& node = nodes[stack.pop_back()];
     if (!node.intersect(ray))
       continue;
 
@@ -357,8 +356,8 @@ Bvh::traverse(Ray& ray, const Prim* prims) const
         }
       }
     } else {
-      stack.push(node.first_index);
-      stack.push(node.first_index + 1);
+      stack.push_back(node.first_index);
+      stack.push_back(node.first_index + 1);
     }
   }
   return hit;
