@@ -1,28 +1,30 @@
 #pragma once
 
+#include <Qx/cuda_macros.hpp>
+
 namespace Qx {
 
 template<typename Element, int Max>
 class SmallStack final
 {
 public:
-  constexpr bool empty() const noexcept { return m_size == 0; }
+  constexpr bool __device__ empty() const noexcept { return m_size == 0; }
 
-  constexpr int size() const noexcept { return m_size; }
+  constexpr int __device__ size() const noexcept { return m_size; }
 
-  Element pop_back()
+  Element __device__ pop_back()
   {
     m_size--;
     return m_elements[m_size];
   }
 
-  void push_back_safely(Element element)
+  void __device__ push_back_safely(Element element)
   {
     if ((m_size + 1) < Max)
       push_back(element);
   }
 
-  void push_back(Element element)
+  void __device__ push_back(Element element)
   {
     m_elements[m_size] = element;
 

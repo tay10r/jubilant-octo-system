@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Qx/array.hpp>
 #include <Qx/cuda_macros.hpp>
 #include <Qx/random.hpp>
 #include <Qx/ray.hpp>
@@ -24,6 +25,42 @@ public:
 
   virtual void
   render(const Vec3& eye, const Vec3& dir, const Vec3& right, const Vec3& up, int width, int height, float* rgb) = 0;
+
+  template<bool DeviceFlag>
+  static Vec3 __device__ renderPixel(const Array<Triangle, DeviceFlag>& triangles,
+                                     const Bvh<DeviceFlag>& bvh,
+                                     const Vec3& eye,
+                                     const Vec3& dir,
+                                     const Vec3& right,
+                                     const Vec3& up,
+                                     int x,
+                                     int y,
+                                     int width,
+                                     int height)
+  {
+    Pcg rng((y * width) + x);
+
+    Vec3 hdr_color(0, 0, 0);
+
+    const int spp = 1;
+
+    for (int i = 0; i < spp; i++) {
+
+      const float u = (float(x) + random_float(rng)) / float(width);
+      const float v = (float(y) + random_float(rng)) / float(height);
+
+      const float d_x = (u * 2.0f) - 1.0f;
+      const float d_y = 1.0f - (v * 2.0f);
+
+      Ray ray(eye, normalize(dir + (d_x * right) + (d_y * up)));
+
+      hdr_color = hdr_color + trace(triangles, bvh, ray, rng);
+    }
+
+    const Vec3 ldr_color = hdr_color / (hdr_color + Vec3(1, 1, 1));
+
+    return ldr_color;
+  }
 
 protected:
   static Vec3 __device__ on_miss(const Ray& ray)
@@ -63,7 +100,8 @@ protected:
   }
 
   template<bool DeviceFlag, typename Rng>
-  static Vec3 __device__ trace(const Triangle* triangles, const Bvh<DeviceFlag>& bvh, Ray& ray, Rng& rng)
+  static Vec3 __device__
+  trace(const Array<Triangle, DeviceFlag>& triangles, const Bvh<DeviceFlag>& bvh, Ray& ray, Rng& rng)
   {
     int depth = 0;
 
@@ -100,42 +138,6 @@ protected:
     }
 
     return Vec3(0, 0, 0);
-  }
-
-  template<bool DeviceFlag>
-  static Vec3 __device__ renderPixel(const Triangle* triangles,
-                                     const Bvh<DeviceFlag>& bvh,
-                                     const Vec3& eye,
-                                     const Vec3& dir,
-                                     const Vec3& right,
-                                     const Vec3& up,
-                                     int x,
-                                     int y,
-                                     int width,
-                                     int height)
-  {
-    Pcg rng((y * width) + x);
-
-    Vec3 hdr_color(0, 0, 0);
-
-    const int spp = 1;
-
-    for (int i = 0; i < spp; i++) {
-
-      const float u = (float(x) + random_float(rng)) / float(width);
-      const float v = (float(y) + random_float(rng)) / float(height);
-
-      const float d_x = (u * 2.0f) - 1.0f;
-      const float d_y = 1.0f - (v * 2.0f);
-
-      Ray ray(eye, normalize(dir + (d_x * right) + (d_y * up)));
-
-      hdr_color = hdr_color + trace(triangles, bvh, ray, rng);
-    }
-
-    const Vec3 ldr_color = hdr_color / (hdr_color + Vec3(1, 1, 1));
-
-    return ldr_color;
   }
 };
 

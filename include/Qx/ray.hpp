@@ -18,7 +18,7 @@ struct Ray
     , tmax(tmax_)
   {}
 
-  Vec3 __device__ inv_dir() const { return Vec3(safe_inverse(dir[0]), safe_inverse(dir[1]), safe_inverse(dir[2])); }
+  Vec3 __device__ inv_dir() const { return Vec3(rcp(dir[0]), rcp(dir[1]), rcp(dir[2])); }
 };
 
 } // namespace Qx

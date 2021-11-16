@@ -15,9 +15,9 @@ struct Node final
   std::uint32_t prim_count = 0;
   std::uint32_t first_index = 0;
 
-  constexpr __device__ Node() = default;
+  constexpr Node() = default;
 
-  constexpr __device__ Node(const BBox& bbox, std::uint32_t prim_count, std::uint32_t first_index)
+  constexpr Node(const BBox& bbox, std::uint32_t prim_count, std::uint32_t first_index)
     : bbox(bbox)
     , prim_count(prim_count)
     , first_index(first_index)
@@ -29,7 +29,7 @@ struct Node final
   {
     float tmin = 1;
     float tmax = 0;
-    operator bool() const { return tmin <= tmax; }
+    __device__ operator bool() const { return tmin <= tmax; }
   };
 
   Intersection __device__ intersect(const Ray& ray) const
@@ -37,18 +37,19 @@ struct Node final
     auto inv_dir = ray.inv_dir();
     auto tmin = (bbox.min - ray.org) * inv_dir;
     auto tmax = (bbox.max - ray.org) * inv_dir;
-    std::tie(tmin, tmax) = std::make_pair(min(tmin, tmax), max(tmin, tmax));
+    tmin = min(tmin, tmax);
+    tmax = max(tmin, tmax);
     return Intersection{ max(tmin[0], max(tmin[1], max(tmin[2], ray.tmin))),
                          min(tmax[0], min(tmax[1], min(tmax[2], ray.tmax))) };
   }
 };
 
-template<bool IsDeviceBvh>
+template<bool DeviceFlag>
 struct Bvh final
 {
-  Array<Node, IsDeviceBvh> nodes;
+  Array<Node, DeviceFlag> nodes;
 
-  Array<size_t, IsDeviceBvh> prim_indices;
+  Array<size_t, DeviceFlag> prim_indices;
 
   Bvh(size_t prim_count)
     : nodes((2 * prim_count) - 1)
@@ -56,7 +57,7 @@ struct Bvh final
   {}
 
   template<typename Prim>
-  Hit<Prim> traverse(Ray& ray, const Prim* prims) const;
+  Hit<Prim> __device__ traverse(Ray& ray, const Array<Prim, DeviceFlag>& prims) const;
 };
 
 using HostBvh = Bvh<false>;
@@ -64,10 +65,10 @@ using HostBvh = Bvh<false>;
 HostBvh
 build_bvh(const BBox* bboxes, const Vec3* centers, size_t prim_count);
 
-template<bool IsDeviceBvh>
+template<bool DeviceFlag>
 template<typename Prim>
 Hit<Prim> __device__
-Bvh<IsDeviceBvh>::traverse(Ray& ray, const Prim* prims) const
+Bvh<DeviceFlag>::traverse(Ray& ray, const Array<Prim, DeviceFlag>& prims) const
 {
   auto hit = Hit<Prim>::none();
   SmallStack<uint32_t, 32> stack;

@@ -3,7 +3,7 @@
 #include "array.cuh"
 #include "bvh.cuh"
 
-#include <Qx/common.hpp>
+#include <Qx/bvh.hpp>
 #include <Qx/random.hpp>
 
 #include <cmath>
@@ -113,28 +113,23 @@ trace(const Triangle* triangles, const Bvh& bvh, Ray& ray, Rng& rng)
 #endif
 
 __global__ void
-renderPixel(const Vec3& eye,
-            const Vec3& dir,
-            const Vec3& right,
-            const Vec3& up,
+renderPixelKernel(const Vec3 eye,
+            const Vec3 dir,
+            const Vec3 right,
+            const Vec3 up,
             const DeviceBvh& bvh,
             const DeviceArray<Triangle>& triangles,
             int width,
             int height,
+            int padded_width,
             Vec3* rgb)
 {
-  const float rcp_width = 1.0f / width;
-  const float rcp_height = 1.0f / height;
-
   const int x = threadIdx.x + (blockIdx.x * blockDim.x);
   const int y = threadIdx.y + (blockIdx.y * blockDim.y);
 
-  const float u = (x + 0.0) * rcp_width;
-  const float v = (y + 0.0) * rcp_height;
+  const int pixelIndex = (y * padded_width) + x;
 
-  const int pixelIndex = (y * width) + x;
-
-  rgb[pixelIndex] = Vec3(u, v, 1.0f);
+  rgb[pixelIndex] = Renderer::renderPixel(triangles, bvh, eye, dir, right, up, x, y, width, height);
 }
 
 class RendererImpl final : public Renderer
@@ -162,7 +157,7 @@ public:
 
     dim3 threads(tx, ty);
 
-    renderPixel<<<blocks, threads>>>(eye, dir, right, up, m_bvh, m_triangles, width, height, &device_rgb[0]);
+    renderPixelKernel<<<blocks, threads>>>(eye, dir, right, up, m_bvh, m_triangles, width, height, padded_w, &device_rgb[0]);
 
     cudaDeviceSynchronize();
 

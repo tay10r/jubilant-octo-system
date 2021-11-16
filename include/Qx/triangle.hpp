@@ -35,7 +35,7 @@ struct Triangle final
   Intersection __device__ intersect(Ray& ray) const;
 };
 
-inline Triangle::Intersection
+inline Triangle::Intersection __device__
 Triangle::intersect(Ray& ray) const
 {
   auto e1 = p0 - p1;

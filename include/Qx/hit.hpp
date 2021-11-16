@@ -13,9 +13,9 @@ struct Hit final
 
   Intersection intersection;
 
-  constexpr operator bool() const { return prim_index != static_cast<uint32_t>(-1); }
+  constexpr __device__ operator bool() const { return prim_index != static_cast<uint32_t>(-1); }
 
-  static constexpr Hit none() { return Hit{ static_cast<uint32_t>(-1), Intersection{} }; }
+  static constexpr Hit __device__ none() { return Hit{ static_cast<uint32_t>(-1), Intersection{} }; }
 };
 
 } // namespace Qx

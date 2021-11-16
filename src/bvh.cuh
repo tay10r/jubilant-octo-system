@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Qx/common.hpp>
+#include <Qx/bvh.hpp>
 
 namespace Qx {
 

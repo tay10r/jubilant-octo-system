@@ -50,12 +50,10 @@ infinity()
   return floatbits(0x7f800000);
 }
 
-inline float __device__ __host__
-safe_inverse(float x)
+constexpr float __device__
+rcp(float x)
 {
-  return std::fabs(x) <= std::numeric_limits<float>::epsilon()
-           ? std::copysign(1.0f / std::numeric_limits<float>::epsilon(), x)
-           : 1.0f / x;
+  return 1.0f / x;
 }
 
 } // namespace Qx
