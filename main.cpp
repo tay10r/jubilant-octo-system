@@ -3,6 +3,7 @@
 #include <Qx/bvh.hpp>
 #include <Qx/render.hpp>
 
+#include <vector>
 #include <fstream>
 #include <iostream>
 #include <optional>
