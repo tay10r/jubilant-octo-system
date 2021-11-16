@@ -125,9 +125,7 @@ public:
     , m_triangles(std::move(triangles))
     , m_bvh(std::move(bvh))
     , m_renderer(Qx::Renderer::create(m_triangles.data(), m_bvh))
-  {
-    glfwSetWindowSize(window, 960, 540);
-  }
+  {}
 
   void render(float* rgb, int width, int height) override
   {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Qx/cuda_macros.hpp>
+#include <Qx/scalar.hpp>
 
 #include <algorithm>
 

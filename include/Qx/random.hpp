@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Qx/cuda_macros.hpp>
+#include <Qx/scalar.hpp>
 
 #include <cstdint>
 
@@ -30,22 +31,6 @@ std::uint32_t __device__
 random_int(Rng& rng)
 {
   return rng();
-}
-
-inline float __device__
-floatbits(std::uint32_t in)
-{
-  union
-  {
-    std::uint32_t i;
-    float f;
-  } v;
-
-  static_assert(sizeof(v) == 4);
-
-  v.i = in;
-
-  return v.f;
 }
 
 template<typename Rng>

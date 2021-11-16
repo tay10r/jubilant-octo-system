@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Qx/array.hpp>
+#include <Qx/ray.hpp>
 #include <Qx/scalar.hpp>
 #include <Qx/small_stack.hpp>
 #include <Qx/vec3.hpp>
@@ -69,40 +70,6 @@ struct BBox
   }
 };
 
-inline float
-robust_min(float a, float b)
-{
-  return a < b ? a : b;
-}
-inline float
-robust_max(float a, float b)
-{
-  return a > b ? a : b;
-}
-inline float
-safe_inverse(float x)
-{
-  return std::fabs(x) <= std::numeric_limits<float>::epsilon()
-           ? std::copysign(1.0f / std::numeric_limits<float>::epsilon(), x)
-           : 1.0f / x;
-}
-
-struct Ray
-{
-  Vec3 org, dir;
-
-  float tmin, tmax;
-
-  Ray(const Vec3& org_, const Vec3& dir_, float tmin_ = 0, float tmax_ = std::numeric_limits<float>::infinity())
-    : org(org_)
-    , dir(dir_)
-    , tmin(tmin_)
-    , tmax(tmax_)
-  {}
-
-  Vec3 inv_dir() const { return Vec3(safe_inverse(dir[0]), safe_inverse(dir[1]), safe_inverse(dir[2])); }
-};
-
 template<typename Prim>
 struct Hit
 {
@@ -145,8 +112,8 @@ struct Node
     auto tmin = (bbox.min - ray.org) * inv_dir;
     auto tmax = (bbox.max - ray.org) * inv_dir;
     std::tie(tmin, tmax) = std::make_pair(min(tmin, tmax), max(tmin, tmax));
-    return Intersection{ robust_max(tmin[0], robust_max(tmin[1], robust_max(tmin[2], ray.tmin))),
-                         robust_min(tmax[0], robust_min(tmax[1], robust_min(tmax[2], ray.tmax))) };
+    return Intersection{ max(tmin[0], max(tmin[1], max(tmin[2], ray.tmin))),
+                         min(tmax[0], min(tmax[1], min(tmax[2], ray.tmax))) };
   }
 };
 
