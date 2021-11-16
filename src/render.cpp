@@ -14,7 +14,7 @@ class RendererImpl final : public Renderer
 {
 public:
   RendererImpl(const Triangle* triangles, const HostBvh& bvh)
-    : m_triangles(triangles)
+    : m_triangles(permute(bvh, triangles))
     , m_bvh(bvh)
   {}
 
@@ -38,7 +38,7 @@ public:
   }
 
 private:
-  const Triangle* m_triangles;
+  Array<Triangle, false> m_triangles;
 
   const HostBvh& m_bvh;
 };

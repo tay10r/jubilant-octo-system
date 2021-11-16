@@ -60,6 +60,18 @@ struct Bvh final
   Hit<Prim> __device__ traverse(Ray& ray, const Array<Prim, DeviceFlag>& prims) const;
 };
 
+template<typename Prim>
+Array<Prim, false>
+permute(const Bvh<false>& bvh, const Prim* primitives)
+{
+  Array<Prim, false> result(bvh.prim_indices.size());
+
+  for (size_t i = 0; i < bvh.prim_indices.size(); i++)
+    result[i] = primitives[bvh.prim_indices[i]];
+
+  return result;
+}
+
 using HostBvh = Bvh<false>;
 
 HostBvh
@@ -71,8 +83,11 @@ Hit<Prim> __device__
 Bvh<DeviceFlag>::traverse(Ray& ray, const Array<Prim, DeviceFlag>& prims) const
 {
   auto hit = Hit<Prim>::none();
+
   SmallStack<uint32_t, 32> stack;
+
   stack.push_back(0);
+
   while (!stack.empty()) {
     auto& node = nodes[stack.pop_back()];
     if (!node.intersect(ray))
@@ -80,7 +95,7 @@ Bvh<DeviceFlag>::traverse(Ray& ray, const Array<Prim, DeviceFlag>& prims) const
 
     if (node.is_leaf()) {
       for (size_t i = 0; i < node.prim_count; ++i) {
-        auto prim_index = prim_indices[node.first_index + i];
+        auto prim_index = node.first_index + i;
         auto isect = prims[prim_index].intersect(ray);
         if (isect && (!hit || (isect.distance() < hit.intersection.distance()))) {
           hit.prim_index = prim_index;
@@ -92,6 +107,7 @@ Bvh<DeviceFlag>::traverse(Ray& ray, const Array<Prim, DeviceFlag>& prims) const
       stack.push_back(node.first_index + 1);
     }
   }
+
   return hit;
 }
 
