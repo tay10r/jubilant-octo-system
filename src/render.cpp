@@ -26,7 +26,8 @@ public:
 
       for (int x = 0; x < width; x++) {
 
-        const Vec3 result = renderPixel(m_triangles, m_bvh, eye, dir, right, up, x, y, width, height);
+        const Vec3 result =
+          renderPixel<false>(&m_triangles[0], &m_bvh.nodes[0], eye, dir, right, up, x, y, width, height);
 
         const int offset = 3 * ((y * width) + x);
 

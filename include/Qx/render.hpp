@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Qx/array.hpp>
+#include <Qx/bvh.hpp>
 #include <Qx/cuda_macros.hpp>
 #include <Qx/random.hpp>
 #include <Qx/ray.hpp>
@@ -10,9 +11,6 @@
 #include <memory>
 
 namespace Qx {
-
-template<bool>
-struct Bvh;
 
 struct Triangle;
 
@@ -27,8 +25,8 @@ public:
   render(const Vec3& eye, const Vec3& dir, const Vec3& right, const Vec3& up, int width, int height, float* rgb) = 0;
 
   template<bool DeviceFlag>
-  static Vec3 __device__ renderPixel(const Array<Triangle, DeviceFlag>& triangles,
-                                     const Bvh<DeviceFlag>& bvh,
+  static Vec3 __device__ renderPixel(const Triangle* triangles,
+                                     const Node* nodes,
                                      const Vec3& eye,
                                      const Vec3& dir,
                                      const Vec3& right,
@@ -54,7 +52,7 @@ public:
 
       Ray ray(eye, normalize(dir + (d_x * right) + (d_y * up)));
 
-      hdr_color = hdr_color + trace(triangles, bvh, ray, rng);
+      hdr_color = hdr_color + trace<DeviceFlag>(triangles, nodes, ray, rng);
     }
 
     const Vec3 ldr_color = hdr_color / (hdr_color + Vec3(1, 1, 1));
@@ -100,18 +98,17 @@ protected:
   }
 
   template<bool DeviceFlag, typename Rng>
-  static Vec3 __device__
-  trace(const Array<Triangle, DeviceFlag>& triangles, const Bvh<DeviceFlag>& bvh, Ray& ray, Rng& rng)
+  static Vec3 __device__ trace(const Triangle* triangles, const Node* nodes, Ray& ray, Rng& rng)
   {
     int depth = 0;
 
-    const int max_depth = 5;
+    const int max_depth = 6;
 
     Vec3 color(1, 1, 1);
 
     while (depth < max_depth) {
 
-      auto hit = bvh.traverse(ray, triangles);
+      auto hit = Bvh<DeviceFlag>::traverse(ray, triangles, nodes);
       if (!hit)
         return color * on_miss(ray);
 

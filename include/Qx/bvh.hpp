@@ -57,7 +57,7 @@ struct Bvh final
   {}
 
   template<typename Prim>
-  Hit<Prim> __device__ traverse(Ray& ray, const Array<Prim, DeviceFlag>& prims) const;
+  static Hit<Prim> __device__ traverse(Ray& ray, const Prim* prims, const Node* nodes);
 };
 
 template<typename Prim>
@@ -80,7 +80,7 @@ build_bvh(const BBox* bboxes, const Vec3* centers, size_t prim_count);
 template<bool DeviceFlag>
 template<typename Prim>
 Hit<Prim> __device__
-Bvh<DeviceFlag>::traverse(Ray& ray, const Array<Prim, DeviceFlag>& prims) const
+Bvh<DeviceFlag>::traverse(Ray& ray, const Prim* prims, const Node* nodes)
 {
   auto hit = Hit<Prim>::none();
 
