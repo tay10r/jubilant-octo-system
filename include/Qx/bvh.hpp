@@ -35,12 +35,12 @@ struct Node final
   Intersection __device__ intersect(const Ray& ray) const
   {
     auto inv_dir = ray.inv_dir();
-    auto tmin = (bbox.min - ray.org) * inv_dir;
-    auto tmax = (bbox.max - ray.org) * inv_dir;
-    tmin = min(tmin, tmax);
-    tmax = max(tmin, tmax);
-    return Intersection{ max(tmin[0], max(tmin[1], max(tmin[2], ray.tmin))),
-                         min(tmax[0], min(tmax[1], min(tmax[2], ray.tmax))) };
+    auto tmin_0 = (bbox.min - ray.org) * inv_dir;
+    auto tmax_0 = (bbox.max - ray.org) * inv_dir;
+    auto tmin_1 = min(tmin_0, tmax_0);
+    auto tmax_1 = max(tmin_0, tmax_0);
+    return Intersection{ max(tmin_1[0], max(tmin_1[1], max(tmin_1[2], ray.tmin))),
+                         min(tmax_1[0], min(tmax_1[1], min(tmax_1[2], ray.tmax))) };
   }
 };
 
