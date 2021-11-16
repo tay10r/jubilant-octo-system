@@ -3,6 +3,7 @@
 #include <Qx/bvh.hpp>
 #include <Qx/render.hpp>
 
+#include <chrono>
 #include <vector>
 #include <fstream>
 #include <iostream>
@@ -129,6 +130,20 @@ public:
     , m_renderer(Qx::Renderer::create(m_triangles.data(), m_bvh))
   {}
 
+  ~App()
+  {
+    print_performance(std::cout);
+  }
+
+  void print_performance(std::ostream& outStream)
+  {
+    if (m_total_frame_count > 0) {
+      const double average_rays_per_second = m_total_rays_per_second / m_total_frame_count;
+
+      std::cout << "Average rays per second: " << average_rays_per_second << std::endl;
+    }
+  }
+
   void render(float* rgb, int width, int height) override
   {
     const glm::vec3 eye = get_camera_position();
@@ -144,7 +159,17 @@ public:
     const Qx::Vec3 tmp_up(up.x, up.y, up.z);
     const Qx::Vec3 tmp_right(right.x, right.y, right.z);
 
+    auto t0 = std::chrono::high_resolution_clock::now();
+
     m_renderer->render(tmp_eye, tmp_dir, tmp_right, tmp_up, width, height, rgb);
+
+    auto t1 = std::chrono::high_resolution_clock::now();
+
+    auto t = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+
+    m_total_rays_per_second += (double(width) * height) / (t / 1000.0);
+
+    m_total_frame_count += 1;
   }
 
 private:
@@ -153,6 +178,10 @@ private:
   Qx::HostBvh m_bvh;
 
   std::unique_ptr<Qx::Renderer> m_renderer;
+
+  double m_total_rays_per_second = 0;
+
+  int m_total_frame_count = 0;
 };
 
 class AppFactory final : public window_blit::AppFactoryBase
