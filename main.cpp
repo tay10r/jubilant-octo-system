@@ -1,9 +1,10 @@
 #include <window_blit/window_blit.hpp>
 
-#include <Qx/common.hpp>
+#include <Qx/bvh.hpp>
 #include <Qx/render.hpp>
 
 #include <fstream>
+#include <iostream>
 #include <optional>
 
 namespace obj {

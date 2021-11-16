@@ -1,4 +1,8 @@
-#include <Qx/common.hpp>
+#include <Qx/bvh.hpp>
+
+#include <algorithm>
+#include <numeric>
+#include <vector>
 
 namespace Qx {
 

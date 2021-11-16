@@ -3,10 +3,8 @@
 #include <Qx/cuda_macros.hpp>
 #include <Qx/random.hpp>
 #include <Qx/ray.hpp>
+#include <Qx/triangle.hpp>
 #include <Qx/vec3.hpp>
-
-// TODO get rid of this header.
-#include <Qx/common.hpp>
 
 #include <memory>
 

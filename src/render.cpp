@@ -1,6 +1,6 @@
 #include <Qx/render.hpp>
 
-#include <Qx/common.hpp>
+#include <Qx/bvh.hpp>
 #include <Qx/random.hpp>
 
 #include <cmath>

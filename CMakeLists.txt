@@ -17,7 +17,7 @@ FetchContent_MakeAvailable(windowblit)
 
 set(sources
   main.cpp
-  src/common.cpp)
+  src/bvh.cpp)
 
 if(CMAKE_CUDA_COMPILER AND ENABLE_CUDA)
   list(APPEND sources src/render.cu src/bvh.cu)
