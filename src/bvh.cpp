@@ -49,6 +49,16 @@ find_closest_node(const std::vector<Node>& nodes, size_t index)
   return best_index;
 }
 
+BBox compute_centroid_bounds(const Vec3* centers, size_t prim_count)
+{
+  BBox bounds = BBox::empty();
+
+  for (size_t i = 0; i < prim_count; i++)
+    bounds.extend(centers[i]);
+
+  return bounds;
+}
+
 } // namespace
 
 HostBvh
@@ -56,13 +66,7 @@ build_bvh(const BBox* bboxes, const Vec3* centers, size_t prim_count)
 {
   HostBvh bvh(prim_count);
 
-  // Compute the bounding box of all the centers
-  auto center_bbox = std::transform_reduce(
-    centers,
-    centers + prim_count,
-    BBox::empty(),
-    [](const BBox& left, const BBox& right) { return BBox(left).extend(right); },
-    [](const Vec3& point) { return BBox(point); });
+  auto center_bbox = compute_centroid_bounds(centers, prim_count);
 
   // Compute morton codes for each primitive
   std::vector<Morton::Value> mortons(prim_count);
