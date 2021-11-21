@@ -84,27 +84,58 @@ Bvh<DeviceFlag>::traverse(Ray& ray, const Prim* prims, const Node* nodes)
 {
   auto hit = Hit<Prim>::none();
 
-  SmallStack<uint32_t, 32> stack;
+  SmallStack<const Node*, 128> stack;
 
-  stack.push_back(0);
+  const Node* node = &nodes[0];
 
-  while (!stack.empty()) {
-    auto& node = nodes[stack.pop_back()];
-    if (!node.intersect(ray))
-      continue;
+  while (true) {
 
-    if (node.is_leaf()) {
-      for (size_t i = 0; i < node.prim_count; ++i) {
-        auto prim_index = node.first_index + i;
-        auto isect = prims[prim_index].intersect(ray);
+    auto first_child = node->first_index;
+    const Node* lNode = &nodes[first_child + 0];
+    const Node* rNode = &nodes[first_child + 1];
+    const auto lHit = lNode->intersect(ray);
+    const auto rHit = rNode->intersect(ray);
+
+    if (lHit) {
+      if (lNode->is_leaf()) {
+        const auto isect = prims[lNode->first_index].intersect(ray);
         if (isect && (!hit || (isect.distance() < hit.intersection.distance()))) {
-          hit.prim_index = prim_index;
+          hit.prim_index = lNode->first_index;
           hit.intersection = isect;
         }
+        lNode = nullptr;
       }
     } else {
-      stack.push_back(node.first_index);
-      stack.push_back(node.first_index + 1);
+      lNode = nullptr;
+    }
+
+    if (rHit) {
+      if (rNode->is_leaf()) {
+        const auto isect = prims[rNode->first_index].intersect(ray);
+        if (isect && (!hit || (isect.distance() < hit.intersection.distance()))) {
+          hit.prim_index = rNode->first_index;
+          hit.intersection = isect;
+        }
+        rNode = nullptr;
+      }
+    } else {
+      rNode = nullptr;
+    }
+
+    if ((lNode != nullptr) ^ (rNode != nullptr)) {
+      node = (lNode != nullptr) ? lNode : rNode;
+    } else if ((lNode != nullptr) & (rNode != nullptr)) {
+      if (lHit.tmin > rHit.tmin) {
+        const Node* tmp = lNode;
+        lNode = rNode;
+        rNode = tmp;
+      }
+      stack.push_back(rNode);
+      node = lNode;
+    } else {
+      if (stack.empty())
+        break;
+      node = stack.pop_back();
     }
   }
 
